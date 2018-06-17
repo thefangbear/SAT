@@ -3,7 +3,7 @@ This repository aims at providing a set of routines for parsing and solving simp
 
 The parser we use is a simple recursive descent parser that uses the following grammar:
 ```
-<S> : <B> <OP> <S> | <T> ;
+<S> : <B> <OP> <S> | <B> | <T> ;
 <T> : ;
 <B> : '~' <BV> | <BV> ;
 <BV> : '0' | '1' | 't' | 'f' | 'T' | 'F' ;

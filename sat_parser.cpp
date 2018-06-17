@@ -2,12 +2,12 @@
 #include <cstdlib>
 #include <iostream>
 using namespace std;
-typedef struct _bexpr {
+struct bexpr {
 	char val;
 	char op;
 	char neg;
-	struct _bexpr expr;
-} bexpr;
+	bexpr *expr;
+};
 
 void err()
 {
@@ -17,12 +17,13 @@ void err()
 
 char* skip(char* s)
 {
-	while (*s == ' ' || *s == '\n' || *s == '\t') ++s;
+	//while (*s == ' ' || *s == '\n' || *s == '\t') ++s;
+	//printf("skip: @%c\n", *s);
 	return s;
 }
 
 // grammar:
-// <S>: <bool> <op> <S> | <t>
+// <S>: <bool> <op> <S> | <bool> | <t>
 // <bool>: '~' <bval> | <bval>
 // <bval>: '1' | '0' | 't' | 'f' | 'T' | 'F'
 // <op>: '^' | '&' | '|'
@@ -31,7 +32,8 @@ void B(bexpr* expr, char** prog)
 {
 	char* s = *prog;
 	s = skip(s);
-	if (!s || (*s)) err(); // <bool> does not allow <t>
+	if (!s || !(*s)) err(); // <bool> does not allow <t>
+	printf("B(): @%c\n", *s);
 	switch (*s) {
 		case '~': {
 							expr->neg = 1;
@@ -57,6 +59,7 @@ void OP(bexpr* expr, char** prog)
 	char *s = *prog;
 	s = skip(s);
 	if (!s || !(*s)) err(); // <op> does not allow <term> either
+	printf("OP(): @%c\n", *s);
 	switch (*s) {
 		case '^':
 		case '&':
@@ -70,34 +73,62 @@ void OP(bexpr* expr, char** prog)
 	*prog = s;
 }
 
-_Bool T(bexpr* expr, char** prog)
+#define _T(expr,prog) \
+	if (!(*prog) || !(**prog) || (**prog==';')){\
+			expr->op=';';\
+			return 1;}
+
+bool T(bexpr* expr, char** prog)
 {
-	if (!(*prog) || !(**prog)) {
-		expr->val = 0;
-		expr->expr = NULL;
-		expr->op = ';';
-		return 1;
-	}
+	_T(expr,prog);
 	*prog = skip(*prog);
-	if (!(*prog) || !(**prog)) {
-		expr->val = 0;
-		expr->expr = NULL;
-		expr->op = ';';
-		return 1;
-	}
+	_T(expr,prog);
 	return 0;
 }
 
 void S(bexpr* expr, char** prog)
 {
+	printf("S(): check\n");
 	if (T(expr,prog)) return; // the <t> case
+	printf("S(): parsing B()\n");
 	B(expr, prog);
+	if (T(expr,prog)) return;
+	printf("S(): parsing OP()\n");
 	OP(expr, prog);
+	if (T(expr,prog)) err(); // strict check for next <S>, no term allowed here
 	expr->expr = new bexpr;
+	printf("S(): parsing S()\n");
 	S(expr->expr, prog);
+}
+
+void RPN_print(bexpr * expr)
+{
+	if (expr->op == ';') {
+		printf("%c", expr->val);
+		return;
+	}
+	printf("(");
+	printf("%c ", expr->op);
+	if (expr->neg == '~') printf("%c",expr->neg);
+	printf("%c ", expr->val);
+	if(expr->expr)
+		RPN_print(expr->expr);
+	printf(")");
 }
 
 int main()
 {
+	char * s;
+	size_t len;
+	cin >> len;
+	s = (char*) malloc(len);
+	memset(s, '\0', len);
+	scanf("%s", s);
+	++s;
+	printf("input: %s\n", s);
+	bexpr *expr = new bexpr;
+	S(expr, &s);
+	RPN_print(expr);
+	puts("");
 	return 0;
 }
