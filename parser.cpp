@@ -7,6 +7,7 @@ struct bexpr {
 	char op;
 	char neg;
 	bexpr *expr;
+	bexpr * n_expr;
 };
 
 void err()
@@ -27,7 +28,7 @@ char* skip(char* s)
 // <bool>: '~' <bval> | <bval>
 // <bval>: '1' | '0' | 't' | 'f' | 'T' | 'F'
 // <op>: '^' | '&' | '|'
-
+void S(bexpr* expr, char** prog);
 void B(bexpr* expr, char** prog)
 {
 	char* s = *prog;
@@ -35,6 +36,16 @@ void B(bexpr* expr, char** prog)
 	if (!s || !(*s)) err(); // <bool> does not allow <t>
 	printf("B(): @%c\n", *s);
 	switch (*s) {
+		case '(': {
+							++s;
+							expr->n_expr = new bexpr;
+							*prog=s;
+							S(expr->n_expr, prog);
+							++(*prog);
+							printf("B(): S() returned, **prog=%d\n",**prog=='\0');
+							return;
+							break;
+							}
 		case '~': {
 							expr->neg = 1;
 							++s;
@@ -45,6 +56,7 @@ void B(bexpr* expr, char** prog)
 		case 'f':
 		case 'T':
 		case 'F':
+							expr->n_expr = NULL;
 							expr->val = *s;
 							++s;
 							break;
@@ -74,8 +86,9 @@ void OP(bexpr* expr, char** prog)
 }
 
 #define _T(expr,prog) \
-	if (!(*prog) || !(**prog) || (**prog==';')){\
+	if (!(*prog) || !(**prog) || (**prog==0) || (**prog=='\0') || (**prog==';')||(**prog==')')){\
 			expr->op=';';\
+			printf("T(): return\n");\
 			return 1;}
 
 bool T(bexpr* expr, char** prog)
@@ -93,7 +106,7 @@ void S(bexpr* expr, char** prog)
 	printf("S(): parsing B()\n");
 	B(expr, prog);
 	if (T(expr,prog)) return;
-	printf("S(): parsing OP()\n");
+	printf("S(): parsing OP(), %c\n",**prog);
 	OP(expr, prog);
 	if (T(expr,prog)) err(); // strict check for next <S>, no term allowed here
 	expr->expr = new bexpr;
@@ -104,8 +117,21 @@ void S(bexpr* expr, char** prog)
 void RPN_print(bexpr * expr)
 {
 	if (expr->op == ';') {
-		printf("%c", expr->val);
+		if (expr->n_expr==NULL)
+			printf("%c", expr->val);
+		else {
+			printf("(");
+			RPN_print(expr->n_expr);
+			printf(")");
+		} 
 		return;
+	} else if (expr->n_expr != NULL) {
+		printf("(");
+		printf("%c ", expr->op);
+		RPN_print(expr->n_expr);
+		if (expr->expr)
+			RPN_print(expr->expr);
+		printf(")");
 	}
 	printf("(");
 	printf("%c ", expr->op);
