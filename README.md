@@ -28,12 +28,12 @@ denote a valid expression. Evaluation proceeds in strict left-to-right manner.
 ## Development status
 
 Currently testing and revising the parser for boolean expressions.
-	- Step 1: Write a parser that supports parsing non-parenthesized boolean expressions (done, `sat_parser.cpp`)
-	- Step 2: Write a parser that supports parenthesized boolean expressions (done, `parser.cpp`)
-	- Step 3: Write a parser that evaluates boolean expressions (done, `parser.cpp`)
-	- Step 4: Write a parser that handles free-formed expressions (working on it, `constraint_parser.cpp`)
-	- Step 5: Implement a basic backtracking-based SAT solving algorithm
-	- Step 6: Implement a more advanced SAT solving algorithm
+		- Step 1: Write a parser that supports parsing non-parenthesized boolean expressions (done, `sat_parser.cpp`)
+		- Step 2: Write a parser that supports parenthesized boolean expressions (done, `parser.cpp`)
+		- Step 3: Write a parser that evaluates boolean expressions (done, `parser.cpp`)
+		- Step 4: Write a parser that handles free-formed expressions (working on it, `constraint_parser.cpp`)
+		- Step 5: Implement a basic backtracking-based SAT solving algorithm
+		- Step 6: Implement a more advanced SAT solving algorithm
 
 ## Author
 	Rui-Jie Fang
