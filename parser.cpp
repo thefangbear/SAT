@@ -142,6 +142,57 @@ void RPN_print(bexpr * expr)
 	printf(")");
 }
 
+inline static bool _cast(char v)
+{
+	switch (v) {
+		case 't':
+		case 'T':
+		case '1':
+		case 1:
+			return 1;
+		case 'f':
+		case 'F':
+		case '0':
+		case 0:
+			return 0;
+		default:
+			printf("err: _cast() failure, val = %c\n", v);
+			exit(1);
+	}
+}
+
+inline static bool _eval(char v1, char v2, char op)
+{
+	bool b1 = _cast(v1), b2 = _cast(v2);
+	switch (op) {
+		case '^':
+			return b1 ^ b2;
+		case '|':
+			return b1 | b2;
+		case '&':
+			return b1 & b2;
+		default:
+			printf("err: _eval() failure, op = %c\n", op);
+			exit(1);
+	}
+}
+
+bool eval(bexpr* expr)
+{
+	if (expr->op == ';') {
+		if (expr->n_expr==NULL) {
+			return expr->neg == '~' ? ~expr->val : expr->val;
+		} else {
+			return expr->neg == '~' ? ~eval(expr->n_expr) : eval(expr->n_expr);
+		}
+	} else if (expr->n_expr != NULL) {
+		bool p = eval(expr->n_expr);
+		return _eval(expr->neg=='~' ? ~p : p, eval(expr->expr), expr->op);
+	} else { // expr->n_expr == NULL, is val
+		return _eval(expr->neg=='~' ? ~expr->val : expr->val, eval(expr->expr), expr->op);
+	}
+}
+
 void bexpr_free(bexpr* expr)
 {
 	bexpr* next;
@@ -168,6 +219,7 @@ int main()
 	S(expr, &s);
 	RPN_print(expr);
 	puts("");
+	printf("eval result is %d\n", eval(expr));
 	bexpr_free(expr);
 	return 0;
 }
