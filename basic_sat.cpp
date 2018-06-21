@@ -1,6 +1,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
+#include <vector>
 using namespace std;
 struct bexpr {
 	char val;
@@ -212,6 +213,108 @@ bool eval(bexpr* expr)
 		}
 		return _eval(expr->neg ? ~_cast(expr->val) : _cast(expr->val), eval(expr->expr), expr->op);
 	}
+}
+char _table[1000];
+inline static void init_solve()
+{ for(unsigned i = 0; i < 1000; ++i) _table[i] = 2; }
+inline static void _set(char var, char val)
+{ _table[var] = val; }
+inline static char _lookup(char var)
+{ return _table[var]; }
+inline static char to_printout(char x)
+{
+	switch (x) {
+		case 0: return 'F';
+		case 1: return 'T';
+		default: return 'X';
+	}
+}
+
+void print_solution(bexpr* expr)
+{
+	if (expr==NULL) return;
+	while (expr->op != ';') {a
+		if (expr->n_expr)
+			print_solution(expr->n_expr);
+		if (expr->isfree) {
+			printf("Variable [%c] := %c\n", expr->val, to_printout(lookup(expr->val)));
+		}
+	}
+	if (expr->n_expr)
+		print_solution(expr->n_expr);
+	if (expr->isfree) {
+		printf("Variable [%c] := %c\n", expr->val, to_printout(lookup(expr->val)));
+	}
+	init_solve();
+	return;
+}
+
+bool _feval(bexpr* expr)
+{
+	if (expr->op == ';') {
+		if (expr->n_expr) {
+			return _feval(expr->n_expr);
+		} else {
+			if (expr->isfree) {
+				return (bool) _lookup(expr->val);
+			} else 
+				return (bool) expr->val;
+		}
+	} else {
+		if (expr->n_expr) {
+			bool p = _feval(expr->n_expr);
+			return _eval(p, _feval(expr->expr), expr->op);
+		} else {
+			if (expr->isfree) {
+				bool f = (bool) _lookup(expr->val);
+				return _eval(f, _feval(expr->expr), expr->op);
+			} else {
+				return _eval(expr-.val, _feval(expr->expr), expr->op);
+			}
+		}
+	}
+}
+
+void _register_free_variables(bexpr* expr, vector<char>& vs)
+{
+	if (expr->op == ';') {
+		if (expr->n_expr) {
+			_register_free_variables(expr->n_expr, vs);
+		} else {
+			if (expr->isfree) {
+				vs.push_back(expr->val);
+			}
+		}
+	} else {
+		if (expr->n_expr) {
+			_register_free_variables(expr->n_expr, vs);
+		} else {
+			if (expr->isfree) {
+				vs.push_back(expr->val);
+				_register_free_variables(expr->expr, vs);
+			}
+		}
+	}
+}
+
+void _backtrack(bexpr* expr, vector<char>& vs, unsigned n)
+{
+	if (n == vs.size()) {
+		if (_feval(expr)) {
+			print_solution(expr);
+		}
+	}
+	_set(vs[n],1);
+	_backtrack(expr, vs, n+1);
+	_set(vs[n],0);
+	_backtrack(expr, vs, n+1);
+}
+
+void solve(bexpr* expr)
+{
+	vector<char> free_vars;
+	_register_free_variables(expr, vs);
+
 }
 
 void bexpr_free(bexpr* expr)
