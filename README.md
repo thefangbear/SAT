@@ -32,8 +32,9 @@ Currently testing and revising the parser for boolean expressions.
 		- Step 2: Write a parser that supports parenthesized boolean expressions (done, `parser.cpp`)
 		- Step 3: Write a parser that evaluates boolean expressions (done, `parser.cpp`)
 		- Step 4: Write a parser that handles free-formed expressions (done, `constraint_parser.cpp`)
-		- Step 5: Implement a basic backtracking-based SAT solving algorithm (working on it, 'basic_sat.cpp')
+		- Step 5: Implement a basic backtracking-based SAT solving algorithm (done, `basic_sat.cpp`)
+		- Step 5.5: Implement an iterative version of `_backtrack()` in `basic_sat.cpp` to make it prettier (working on it, `basic_sat.cpp`)
 		- Step 6: Implement a more advanced SAT solving algorithm
-
+		
 ## Author
 	Rui-Jie Fang
