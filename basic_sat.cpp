@@ -1,7 +1,15 @@
+/*
+	Basic SAT
+	basic_sat.cpp
+Author: Rui-Jie Fang
+Date: June 2018
+ */
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
-#include <vector>
+#include <unordered_set>
+#include <utility>
+//#define VERBOSE
 using namespace std;
 struct bexpr {
 	char val;
@@ -180,7 +188,9 @@ inline static bool _cast(char v)
 
 inline static bool _eval(char v1, char v2, char op)
 {
-	printf("_eval: %c,%c\n",v1,v2);
+#ifdef VERBOSE
+	printf("_eval: %d,%d\n",(bool) v1,(bool) v2);
+#endif
 	bool b1 = _cast(v1), b2 = _cast(v2);
 	switch (op) {
 		case '^':
@@ -233,89 +243,171 @@ inline static char to_printout(char x)
 void print_solution(bexpr* expr)
 {
 	if (expr==NULL) return;
-	while (expr->op != ';') {a
+	while (expr->op != ';') {
 		if (expr->n_expr)
 			print_solution(expr->n_expr);
 		if (expr->isfree) {
-			printf("Variable [%c] := %c\n", expr->val, to_printout(lookup(expr->val)));
+			printf("Variable [%c] := %c\n", expr->val, to_printout(_lookup(expr->val)));
 		}
+		expr = expr->expr;
 	}
 	if (expr->n_expr)
 		print_solution(expr->n_expr);
 	if (expr->isfree) {
-		printf("Variable [%c] := %c\n", expr->val, to_printout(lookup(expr->val)));
+		printf("Variable [%c] := %c\n", expr->val, to_printout(_lookup(expr->val)));
 	}
-	init_solve();
+#ifdef VERBOSE
+	printf("print_solution(): all free variables printed, returning...\n");
+#endif
 	return;
 }
 
 bool _feval(bexpr* expr)
 {
 	if (expr->op == ';') {
+#ifdef VERBOSE
+		printf("_feval(): reached end of expression\n");
+#endif
 		if (expr->n_expr) {
 			return _feval(expr->n_expr);
 		} else {
 			if (expr->isfree) {
+#ifdef VERBOSE
+				printf("_feval(): lookup variable %c = %d\n", expr->val, (bool) _lookup(expr->val));
+#endif
 				return (bool) _lookup(expr->val);
 			} else 
-				return (bool) expr->val;
+				return _cast(expr->val);
 		}
 	} else {
 		if (expr->n_expr) {
 			bool p = _feval(expr->n_expr);
 			return _eval(p, _feval(expr->expr), expr->op);
 		} else {
+#ifdef VERBOSE
+			printf("_feval(): @ variable %c\n", expr->val);
+#endif
 			if (expr->isfree) {
+#ifdef VERBOSE
+				printf("_feval(): lookup variable %c = %d\n", expr->val, (bool) _lookup (expr->val));
+#endif
 				bool f = (bool) _lookup(expr->val);
 				return _eval(f, _feval(expr->expr), expr->op);
 			} else {
-				return _eval(expr-.val, _feval(expr->expr), expr->op);
+				return _eval(_cast(expr->val), _feval(expr->expr), expr->op);
 			}
 		}
 	}
 }
 
-void _register_free_variables(bexpr* expr, vector<char>& vs)
+inline static void err_none()
+{
+	printf("err: SAT: nothing to solve.\n");
+	exit(1);
+}
+
+void _register_free_variables(bexpr* expr, unordered_set<char>& vs)
 {
 	if (expr->op == ';') {
 		if (expr->n_expr) {
 			_register_free_variables(expr->n_expr, vs);
+#ifdef VERBOSE
+			printf("reg(): end reached, vs.size() == %lu\n", vs.size());
+#endif
+			if (vs.size() == 0) err_none();
 		} else {
-			if (expr->isfree) {
-				vs.push_back(expr->val);
+			if (expr->isfree && (vs.find(expr->val) == vs.end())) {
+				vs.insert(expr->val);
 			}
+#ifdef VERBOSE
+			printf("reg(): end reached, vs.size() == %lu\n", vs.size());
+#endif
+			if (vs.size() == 0) err_none();
 		}
 	} else {
 		if (expr->n_expr) {
 			_register_free_variables(expr->n_expr, vs);
-		} else {
-			if (expr->isfree) {
-				vs.push_back(expr->val);
-				_register_free_variables(expr->expr, vs);
-			}
+		} 
+		if (expr->isfree && (vs.find(expr->val) == vs.end())) {
+#ifdef VERBOSE
+			printf("reg(): free variable found [%c]\n", expr->val);
+#endif
+			vs.insert(expr->val);
 		}
+		_register_free_variables(expr->expr, vs);
 	}
 }
 
-void _backtrack(bexpr* expr, vector<char>& vs, unsigned n)
+void _backtrack(bexpr* expr, unordered_set<char>& vs, unordered_set<char>::iterator ptr)
 {
-	if (n == vs.size()) {
+	if (ptr == vs.end()) {
+#ifdef VERBOSE
+		printf("_backtrack(): size %u reached, evaling...\n", n);
+#endif
 		if (_feval(expr)) {
+#ifdef VERBOSE
+			printf("_backtrack(): found correct solution, printing out...\n");
+#endif
 			print_solution(expr);
 		}
+		return;
 	}
-	_set(vs[n],1);
-	_backtrack(expr, vs, n+1);
-	_set(vs[n],0);
-	_backtrack(expr, vs, n+1);
+	unordered_set<char>::iterator optr = ptr;
+	++ptr;
+	_set(*optr, 1);
+	_backtrack(expr, vs, ptr);
+	_set(*optr, 0);
+	_backtrack(expr, vs, ptr);
 }
-
-void solve(bexpr* expr)
+#if 0
+void _backtrack_iterative(bexpr* expr, unordered_set<char>& vs)
 {
-	vector<char> free_vars;
-	_register_free_variables(expr, vs);
-
+	if (vs.size() == 0) return;
+	stack< pair<char, bool> > bs;
+	auto ptr = vs.begin();
+	do {
+		if (*ptr == vs.end()) {
+			pair<char, bool> end_p = bs.pop();
+			_set(end_p.first, (char) end_p.second);i
+			printf("_backtrack(): size %u reached, evaling...\n", n);
+			if (_feval(expr)) {
+				printf("_backtrack(): found correct solution, printing out...");
+				print_solution(expr);
+			}
+			continue;
+		}
+		pair<char, bool> curr_p = bs.pop();
+		_set(curr_p.first, (char) curr_p.second);
+		bs.insert(make_pair<char, bool>(*ptr, 0));
+		bs.insert(make_pair<char, bool>(*ptr, 1));
+		
+		++ptr;
+	} while (!bs.empty());
 }
+#endif
+inline static void solve(bexpr* expr)
+{
+#ifdef VERBOSE
+	printf("solve(): init_solve\n");
+#endif
+	init_solve();
+	unordered_set<char> free_vars;
+#ifdef VERBOSE
+	printf("solve(): finding free variables\n");
+
+	for(char x : free_vars)
+		printf("[Free Variable Found]: %c\n", x);
+#endif
+	_register_free_variables(expr, free_vars);
+#ifdef VERBOSE
+	printf("solve(): free vars found, backtracking...\n");
+#endif 
+	_backtrack(expr, free_vars, free_vars.begin());
+#ifdef VERBOSE
+	printf("solve(): backtracking done.\n");
+#endif
+}
+
 
 void bexpr_free(bexpr* expr)
 {
@@ -345,7 +437,9 @@ int main()
 	S(expr, &s);
 	RPN_print(expr);
 	puts("");
-	printf("eval result is %d\n", eval(expr));
+//	printf("eval result is %d\n", eval(expr));
+	printf(" === solving === \n");
+	solve(expr);
 	bexpr_free(expr);
 	return 0;
 }
