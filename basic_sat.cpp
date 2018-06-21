@@ -6,19 +6,20 @@ struct bexpr {
 	char val;
 	char op;
 	char neg;
+	char isfree;
 	bexpr *expr;
 	bexpr * n_expr;
 };
 
-void err()
+inline static void err()
 {
 	printf("syntax error\n");
 	exit(1);
 }
 
-char* skip(char* s)
+inline static char* skip(char* s)
 {
-	//while (*s == ' ' || *s == '\n' || *s == '\t') ++s;
+	while (*s == ' ' || *s == '\n' || *s == '\t') ++s;
 	//printf("skip: @%c\n", *s);
 	return s;
 }
@@ -28,6 +29,12 @@ char* skip(char* s)
 // <bool>: '~' <bval> | <bval>
 // <bval>: '1' | '0' | 't' | 'f' | 'T' | 'F'
 // <op>: '^' | '&' | '|'
+
+inline static bool is_free_variable(char c)
+{
+	return ((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z'));
+}
+
 void S(bexpr* expr, char** prog);
 void B(bexpr* expr, char** prog)
 {
@@ -35,6 +42,7 @@ void B(bexpr* expr, char** prog)
 	s = skip(s);
 	if (!s || !(*s)) err(); // <bool> does not allow <t>
 	printf("B(): @%c\n", *s);
+	expr->isfree= 0;
 	expr->neg = 0;
 	switch (*s) {
 		case '(': {
@@ -62,6 +70,13 @@ void B(bexpr* expr, char** prog)
 							++s;
 							break;
 		default:
+							if (is_free_variable(*s)) {
+								expr->isfree = 1;
+								expr->n_expr = NULL;
+								expr->val = *s;
+								++s;
+								break;
+							}
 							err();
 	}
 	*prog = s;
@@ -136,7 +151,7 @@ void RPN_print(bexpr * expr)
 	}
 	printf("(");
 	printf("%c ", expr->op);
-	if (expr->neg == '~') printf("%c",expr->neg);
+	if (expr->neg) printf("%c",'~');
 	printf("%c ", expr->val);
 	if(expr->expr)
 		RPN_print(expr->expr);
@@ -164,6 +179,7 @@ inline static bool _cast(char v)
 
 inline static bool _eval(char v1, char v2, char op)
 {
+	printf("_eval: %c,%c\n",v1,v2);
 	bool b1 = _cast(v1), b2 = _cast(v2);
 	switch (op) {
 		case '^':
@@ -182,15 +198,19 @@ bool eval(bexpr* expr)
 {
 	if (expr->op == ';') {
 		if (expr->n_expr==NULL) {
-			return expr->neg  ? ~expr->val : expr->val;
+			return expr->neg  ? ~_cast(expr->val) : _cast(expr->val);
 		} else {
-			return expr->neg ? ~eval(expr->n_expr) : eval(expr->n_expr);
+			return expr->neg ? (~eval(expr->n_expr)) : eval(expr->n_expr);
 		}
 	} else if (expr->n_expr != NULL) {
 		bool p = eval(expr->n_expr);
 		return _eval(expr->neg ? ~p : p, eval(expr->expr), expr->op);
 	} else { // expr->n_expr == NULL, is val
-		return _eval(expr->neg ? ~expr->val : expr->val, eval(expr->expr), expr->op);
+		if (expr->isfree) {
+			printf("err: eval(): cannot evaluate a boolean expression with a free variable\n");
+			exit(1);
+		}
+		return _eval(expr->neg ? ~_cast(expr->val) : _cast(expr->val), eval(expr->expr), expr->op);
 	}
 }
 
@@ -199,6 +219,8 @@ void bexpr_free(bexpr* expr)
 	bexpr* next;
 	while ( expr->op != ';' )
 	{
+		if (expr->n_expr != NULL)
+			bexpr_free(expr->n_expr);
 		next = expr->expr;
 		delete expr;
 		expr = next;
