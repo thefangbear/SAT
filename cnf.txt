@@ -1,0 +1,26 @@
+# Converting to CNF
+CNF is a normalized boolean formula consisted of ANDing numerous clauses, each consisted of multiple ORs
+
+i.e.
+
+F(x1,x2,x3,...xn)
+	:= (x1 OR x2) AND (x3 OR x4) AND (~x5 OR x6) AND (x7 OR ~x8) AND ... AND (~xn)
+
+The CNF-conversion algorithm is basically a divide-and-conquer algorithm based on a recursive data structure.
+
+The invariant is that the returned result of every recursive call satisfies CNF; 
+
+then we only need to process the two clauses, P and Q, and reason by their corresponding operator
+to do transformation on the already normalized sets provided by recursive calls on P and Q.
+
+Source: https://www.cs.jhu.edu/~jason/tutorials/convert-to-CNF.html
+
+# DPLL
+
+DPLL is basically backtracking based on `guessing` on each step;
+for an introduction, see:
+ http://www.cs.umd.edu/~micinski/posts/2012-09-22-efficient-sat-solving.html
+
+The DPLL algorithm is also on Wikipedia:
+ https://en.wikipedia.org/wiki/DPLL_algorithm
+

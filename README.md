@@ -37,7 +37,7 @@ Currently testing and revising the parser for boolean expressions.
  - Step 4: Write a parser that handles free-formed expressions (done, `constraint_parser.cpp`)
  - Step 5: Implement a basic backtracking-based SAT solving algorithm (done, `basic_sat.cpp`)
  - Step 5.5: Implement an iterative version of `_backtrack()` in `basic_sat.cpp` to make it prettier (done, `sat.cpp`)
- - Step 6: Implement a more advanced SAT solving algorithm
+ - Step 6: Implement a more advanced SAT solving algorithm (DPLL; this requires us to write a CNF converter first; see `cnf.txt`)
 
 ## Example Usage
 Enter the expected (maximum) length of the input expression on the first line, and the expression on the second line.
