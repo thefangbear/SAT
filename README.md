@@ -45,6 +45,69 @@ Currently testing and revising the parser for boolean expressions.
 	- Step 5: Implement a basic backtracking-based SAT solving algorithm (done, `basic_sat.cpp`)
 	- Step 5.5: Implement an iterative version of `_backtrack()` in `basic_sat.cpp` to make it prettier (done, `sat.cpp`)
 	- Step 6: Implement a more advanced SAT solving algorithm
-		
+
+## Example Usage
+Enter the expected (maximum) length of the input expression on the first line, and the expression on the second line.
+```
+50
+a&(b|c^d)
+input: a&(b|c^d)
+S(): check
+S(): parsing B()
+B(): @a
+S(): parsing OP(), &
+OP(): @&
+S(): parsing S()
+S(): check
+S(): parsing B()
+B(): @(
+S(): check
+S(): parsing B()
+B(): @b
+S(): parsing OP(), |
+OP(): @|
+S(): parsing S()
+S(): check
+S(): parsing B()
+B(): @c
+S(): parsing OP(), ^
+OP(): @^
+S(): parsing S()
+S(): check
+S(): parsing B()
+B(): @d
+T(): return
+B(): S() returned, **prog=='\0'? 1 [**prog=0]
+T(): return
+(& a ((| b (^ c d))))
+ === solving ===
+solve: got 4 variables, solving [16 possibilities]...
+:::::: Viable solution :::::
+Variable [a] := T
+Variable [b] := T
+Variable [c] := F
+Variable [d] := F
+............................
+:::::: Viable solution :::::
+Variable [a] := T
+Variable [b] := F
+Variable [c] := T
+Variable [d] := F
+............................
+:::::: Viable solution :::::
+Variable [a] := T
+Variable [b] := T
+Variable [c] := T
+Variable [d] := F
+............................
+:::::: Viable solution :::::
+Variable [a] := T
+Variable [b] := F
+Variable [c] := F
+Variable [d] := T
+............................
+
+```
+
 ## Author
 	Rui-Jie Fang
