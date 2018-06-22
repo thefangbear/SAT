@@ -10,6 +10,7 @@ Date: June 2018
 #include <unordered_set>
 #include <utility>
 //#define VERBOSE
+//#define MEMINFO
 using namespace std;
 struct bexpr {
 	char val;
@@ -35,7 +36,7 @@ inline static char* skip(char* s)
 
 // grammar:
 // <S>: <bool> <op> <S> | <bool> | <t>
-// <bool>: '~' <bval> | <bval>
+// <bool>: '~' <bval> | <bval> | '(' <S> ')'
 // <bval>: '1' | '0' | 't' | 'f' | 'T' | 'F'
 // <op>: '^' | '&' | '|'
 
@@ -47,17 +48,18 @@ inline static bool is_free_variable(char c)
 void S(bexpr* expr, char** prog);
 void B(bexpr* expr, char** prog)
 {
-	char* s = *prog;
-	s = skip(s);
-	if (!s || !(*s)) err(); // <bool> does not allow <t>
-	printf("B(): @%c\n", *s);
+#ifdef MEMINFO
+	printf("addr *prog = %p\n", *prog);
+#endif
+	*prog = skip(*prog);
+	if (!(*prog) || !(**prog)) err(); // <bool> does not allow <t>
+	printf("B(): @%c\n", **prog);
 	expr->isfree= 0;
 	expr->neg = 0;
-	switch (*s) {
+	switch (**prog) {
 		case '(': {
-							++s;
+							++(*prog);
 							expr->n_expr = new bexpr;
-							*prog=s;
 							S(expr->n_expr, prog);
 							++(*prog);
 							printf("B(): S() returned, **prog=%d\n",**prog=='\0');
@@ -66,7 +68,7 @@ void B(bexpr* expr, char** prog)
 							}
 		case '~': {
 							expr->neg = 1;
-							++s;
+							++(*prog);
 							}
 		case '1':
 		case '0':
@@ -75,24 +77,26 @@ void B(bexpr* expr, char** prog)
 		case 'T':
 		case 'F':
 							expr->n_expr = NULL;
-							expr->val = *s;
-							++s;
+							expr->val = **prog;
+							++(*prog);
 							break;
 		default:
-							if (is_free_variable(*s)) {
+							if (is_free_variable(**prog)) {
 								expr->isfree = 1;
 								expr->n_expr = NULL;
-								expr->val = *s;
-								++s;
+								expr->val = **prog;
+								++(*prog);
 								break;
 							}
 							err();
 	}
-	*prog = s;
 }
 
 void OP(bexpr* expr, char** prog)
 {
+#ifdef MEMINFO
+	printf("addr *prog = %p\n", *prog);
+#endif
 	char *s = *prog;
 	s = skip(s);
 	if (!s || !(*s)) err(); // <op> does not allow <term> either
@@ -126,12 +130,16 @@ bool T(bexpr* expr, char** prog)
 
 void S(bexpr* expr, char** prog)
 {
+#ifdef MEMINFO
+	printf("addr *prog = %p\n", *prog);
+#endif
 	printf("S(): check\n");
 	if (T(expr,prog)) return; // the <t> case
 	printf("S(): parsing B()\n");
 	B(expr, prog);
+	printf("S(): next: %d\n", **prog);
 	if (T(expr,prog)) return;
-	printf("S(): parsing OP(), %c\n",**prog);
+	printf("S(): parsing OP(), %d\n",**prog);
 	OP(expr, prog);
 	if (T(expr,prog)) err(); // strict check for next <S>, no term allowed here
 	expr->expr = new bexpr;
@@ -348,7 +356,9 @@ void _backtrack(bexpr* expr, unordered_set<char>& vs, unordered_set<char>::itera
 #ifdef VERBOSE
 			printf("_backtrack(): found correct solution, printing out...\n");
 #endif
+			printf("::::: Viable Solution :::::\n");
 			print_solution(expr);
+			printf("..... ............... .....\n");
 		}
 		return;
 	}
@@ -359,32 +369,7 @@ void _backtrack(bexpr* expr, unordered_set<char>& vs, unordered_set<char>::itera
 	_set(*optr, 0);
 	_backtrack(expr, vs, ptr);
 }
-#if 0
-void _backtrack_iterative(bexpr* expr, unordered_set<char>& vs)
-{
-	if (vs.size() == 0) return;
-	stack< pair<char, bool> > bs;
-	auto ptr = vs.begin();
-	do {
-		if (*ptr == vs.end()) {
-			pair<char, bool> end_p = bs.pop();
-			_set(end_p.first, (char) end_p.second);i
-			printf("_backtrack(): size %u reached, evaling...\n", n);
-			if (_feval(expr)) {
-				printf("_backtrack(): found correct solution, printing out...");
-				print_solution(expr);
-			}
-			continue;
-		}
-		pair<char, bool> curr_p = bs.pop();
-		_set(curr_p.first, (char) curr_p.second);
-		bs.insert(make_pair<char, bool>(*ptr, 0));
-		bs.insert(make_pair<char, bool>(*ptr, 1));
-		
-		++ptr;
-	} while (!bs.empty());
-}
-#endif
+
 inline static void solve(bexpr* expr)
 {
 #ifdef VERBOSE
@@ -425,14 +410,19 @@ void bexpr_free(bexpr* expr)
 
 int main()
 {
-	char * s;
+	char * s, * sp;
 	size_t len;
 	cin >> len;
-	s = (char*) malloc(len);
+	sp = s = (char*) malloc(len);
+
 	memset(s, '\0', len);
 	scanf("%s", s);
-	++s;
+//	++s;
 	printf("input: %s\n", s);
+#ifdef MEMINFO
+	printf("addr s = %p, addr s_end = %p\n", s, s + strlen(s) + 1);
+	printf("s_end=%c %c\n", *(s+strlen(s)), *(s+strlen(s)+1));
+#endif
 	bexpr *expr = new bexpr;
 	S(expr, &s);
 	RPN_print(expr);
@@ -441,5 +431,6 @@ int main()
 	printf(" === solving === \n");
 	solve(expr);
 	bexpr_free(expr);
+	free(sp);
 	return 0;
 }

@@ -390,13 +390,12 @@ void bexpr_free(bexpr* expr)
 
 int main()
 {
-	char * s;
+	char * s, * sp;
 	size_t len;
 	cin >> len;
-	s = (char*) malloc(len);
+	sp = s = (char*) malloc(len);
 	memset(s, '\0', len);
 	scanf("%s", s);
-	++s;
 	printf("input: %s\n", s);
 	bexpr *expr = new bexpr;
 	S(expr, &s);
@@ -406,5 +405,6 @@ int main()
 	printf(" === solving === \n");
 	solve(expr);
 	bexpr_free(expr);
+	free(sp);
 	return 0;
 }
