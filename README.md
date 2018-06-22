@@ -25,6 +25,15 @@ typedef struct _bexpr {
 ```
 denote a valid expression. Evaluation proceeds in strict left-to-right manner.
 
+## Current solvers
+We currently have three kinds of solvers, all implementing the basic binary backtrack method.
+
+*Binary-recursive Backtrack Solver*: The solver uses the basic binary-recursive backtracking algorithm. Running time is O(N 2^k).
+
+*Binary-iterative Backtrack Solver*: This solver uses an iterative approach to generate all 2^k solutions down the tree.
+
+*Binary Stack-recursive Backtrack Solver*: (TODO), this solver uses a stack to explicitly handle the recursion.
+
 ## Development status
 
 Currently testing and revising the parser for boolean expressions.
@@ -34,7 +43,7 @@ Currently testing and revising the parser for boolean expressions.
 	- Step 3: Write a parser that evaluates boolean expressions (done, `parser.cpp`)
 	- Step 4: Write a parser that handles free-formed expressions (done, `constraint_parser.cpp`)
 	- Step 5: Implement a basic backtracking-based SAT solving algorithm (done, `basic_sat.cpp`)
-	- Step 5.5: Implement an iterative version of `_backtrack()` in `basic_sat.cpp` to make it prettier (working on it, `basic_sat.cpp`)
+	- Step 5.5: Implement an iterative version of `_backtrack()` in `basic_sat.cpp` to make it prettier (done, `sat.cpp`)
 	- Step 6: Implement a more advanced SAT solving algorithm
 		
 ## Author

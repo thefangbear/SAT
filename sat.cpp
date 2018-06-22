@@ -59,8 +59,9 @@ void B(bexpr* expr, char** prog)
 							expr->n_expr = new bexpr;
 							*prog=s;
 							S(expr->n_expr, prog);
+							if (**prog!=')') err(); 
 							++(*prog);
-							printf("B(): S() returned, **prog=%d\n",**prog=='\0');
+							printf("B(): S() returned, **prog=='\\0'? %d [**prog=%d]\n",**prog=='\0', **prog);
 							return;
 							break;
 							}
@@ -224,17 +225,22 @@ bool eval(bexpr* expr)
 		return _eval(expr->neg ? ~_cast(expr->val) : _cast(expr->val), eval(expr->expr), expr->op);
 	}
 }
-size_t _table, _mark; 
+typedef unsigned long long ull;
+ull _table, _mark; 
+unsigned _pos[50], p=0;
+
 inline static void init_solve()
-{ _table = _mark = 0; }
-inline static void _set(char v)
-{ _table |= (1<<v); _mark |= (1<<v);}
+{ _table = _mark = 0; memset(_pos, 0, 50);}
+
 inline static void _reg(char v)
-{ _mark |= (1<<v); }
-inline static void _contains(char v)
-{ return _mark & (1<<v); }
+{ _pos[v]=p; ++p; _mark |= (1ULL << v); }
+
+inline static char _contains(char v)
+{ return (_mark>>v) & 1ULL; }
+
 inline static char _lookup(char v)
-{ return _table & (1<<v);}
+{ return (_table >> (_pos[v])) & 1ULL;}
+
 inline static char to_printout(char x)
 {
 	switch (x) {
@@ -268,40 +274,45 @@ void print_solution(bexpr* expr)
 
 bool _feval(bexpr* expr)
 {
-	if (expr->op == ';') {
+	bool r;
+	char op = expr->op;
+	if (expr->n_expr)
+		r = _feval(expr->n_expr);
+	else {
+		if (expr->isfree) {
 #ifdef VERBOSE
-		printf("_feval(): reached end of expression\n");
+			printf("_feval(): encountered free variable %c, current value = %d\n", expr->val, (bool) _lookup(expr->val));
 #endif
-		if (expr->n_expr) {
-			return _feval(expr->n_expr);
-		} else {
-			if (expr->isfree) {
-#ifdef VERBOSE
-				printf("_feval(): lookup variable %c = %d\n", expr->val, (bool) _lookup(expr->val));
-#endif
-				return (bool) _lookup(expr->val);
-			} else 
-				return _cast(expr->val);
-		}
-	} else {
-		if (expr->n_expr) {
-			bool p = _feval(expr->n_expr);
-			return _eval(p, _feval(expr->expr), expr->op);
-		} else {
-#ifdef VERBOSE
-			printf("_feval(): @ variable %c\n", expr->val);
-#endif
-			if (expr->isfree) {
-#ifdef VERBOSE
-				printf("_feval(): lookup variable %c = %d\n", expr->val, (bool) _lookup (expr->val));
-#endif
-				bool f = (bool) _lookup(expr->val);
-				return _eval(f, _feval(expr->expr), expr->op);
-			} else {
-				return _eval(_cast(expr->val), _feval(expr->expr), expr->op);
-			}
-		}
+			r = expr->neg ? (bool) ~_lookup(expr->val) : (bool) _lookup(expr->val);
+		} else
+			r = expr->neg ? ~_cast(expr->val) : _cast(expr->val);
 	}
+	if (op == ';') return r;
+	
+	do {
+		expr = expr->expr;
+		bool p;
+		if (expr->n_expr)
+			p = _feval(expr->n_expr);
+		else {
+			if (expr->isfree) {
+#ifdef VERBOSE
+				printf("_feval(): encountered free variable %c, current value = %d\n", expr->val, (bool) _lookup(expr->val));
+#endif
+				p = expr->neg ? (bool) ~_lookup(expr->val) : (bool) _lookup(expr->val);
+			} else 
+				p = expr->neg ? ~ _cast(expr->val) : _cast(expr->val);
+		}
+#ifdef VERBOSE
+		printf(" - p=%d, curr expr->val=%c\n", p, expr->val);
+#endif
+		r = _eval(r, p, op);
+		op = expr->op;
+	} while (op != ';');
+#ifdef VERBOSE
+	printf("_feval() result: %d\n", r);
+#endif
+	return r;
 }
 
 inline static void err_none()
@@ -316,18 +327,25 @@ unsigned _reg_free_vars(bexpr* expr)
 	while (expr->op != ';') {
 		if (expr->n_expr) {
 			f += _reg_free_vars(expr->n_expr);
-			continue;
 		}
 		if (expr->isfree) {
-			++f;
+			if (!_contains(expr->val))
+				++f;
+#ifdef VERBOSE
+			printf("reg(): registering free variable %c\n", expr->val);
+#endif
 			_reg(expr->val);
 		}
 		expr = expr->expr;
 	}
-	if (expr->n_exr)
+	if (expr->n_expr)
 		return f + _reg_free_vars(expr->n_expr);
 	if (expr->isfree) {
-		++f;
+		if (!_contains(expr->val))
+			++f;
+#ifdef VERBOSE
+		printf("reg(): registering free variable %c\n", expr->val);
+#endif
 		_reg(expr->val);
 	}
 	return f;
@@ -335,12 +353,23 @@ unsigned _reg_free_vars(bexpr* expr)
 
 void solve(bexpr* expr)
 {
+#ifdef VERBOSE
+	printf("solve: init()\n");
+#endif
 	init_solve();
+#ifdef VERBOSE
+	printf("solve: regitering free variables\n");
+#endif
 	unsigned n = _reg_free_vars(expr);
-	for(unsigned i = 0; i <= (1<<n); ++i) {
-		_table = i;
+//#ifdef VERBOSE
+	printf("solve: got %u variables, solving [%llu possibilities]...\n", n, (unsigned long long)(1ULL<<n));
+//#endif
+	for(ull i = 0; i <= (1ULL<<n); ++i) {
+		_table = i; // set the table to a generated bit pattern
 		if (_feval(expr)) {
+			printf(":::::: Viable solution :::::\n");
 			print_solution(expr);
+			printf("............................\n");
 		}
 	}
 }
