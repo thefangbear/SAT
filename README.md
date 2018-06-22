@@ -22,6 +22,7 @@ at every right-parenthesis (`)`).
 We currently have three kinds of solvers, all implementing the basic binary backtrack method.
 
 **Binary-recursive Backtrack Solver**: ([basic_sat.cpp](https://github.com/thefangbear/SAT/blob/master/basic_sat.cpp)) The solver uses the basic binary-recursive backtracking algorithm. Running time is O(N 2^k).
+
 **Binary-iterative Backtrack Solver**: ([sat.cpp](https://github.com/thefangbear/SAT/blob/master/sat.cpp)) This solver uses an iterative approach to generate all 2^k solutions down the tree.
 
 **Binary Stack-recursive Backtrack Solver**: ([iterative_basic_sat.cpp](https://github.com/thefangbear/SAT/blob/master/iterative_basic_sat.cpp)) This solver uses a stack to explicitly handle the recursion.
@@ -103,3 +104,6 @@ Variable [d] := T
 
 ## Author
 Rui-Jie Fang
+
+## License
+The MIT License.
