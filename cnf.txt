@@ -24,3 +24,8 @@ for an introduction, see:
 The DPLL algorithm is also on Wikipedia:
  https://en.wikipedia.org/wiki/DPLL_algorithm
 
+# MiniSat
+
+MiniSat is a more advanced algorithm based on DPLL. See paper here:
+ http://minisat.se/downloads/MiniSat.pdf
+
