@@ -1,7 +1,9 @@
 # SAT
-This repository aims at providing a set of routines for parsing and solving simple boolean expressions in C/C++.
+This is an educational repository aims at providing a set of very basic routines for parsing and solving simple boolean expressions in C/C++ and for people who want to implement a very very basic SAT solver for fun.
 
 ## Parser
+
+For simplicity, we parse using a very crude grammar that works most of the time (excuse the sloppiness...).
 
 The parser is a simple recursive descent parser that parses the input expression to (approximately) a binary expression tree.
 
@@ -10,14 +12,19 @@ Parenthesization is handled as having the binary expression tree link to sub-tre
 To avoid writing a full LL(*k*)-parser we simply define the grammar to recurse at every left-parenthesis (`(`), and return
 at every right-parenthesis (`)`).
 
+[Click here to view the very crude parser with no parenthesization support](https://github.com/thefangbear/SAT/blob/master/sat_parser.cpp);
+
+[Click here to view the parser with parenthesization + eval support](https://github.com/thefangbear/SAT/blob/master/parser.cpp);
+
+[Click here to view the parser template file for SAT solver implementation](https://github.com/thefangbear/SAT/blob/master/constraint_parser.cpp)
+
 ## Current solvers
 We currently have three kinds of solvers, all implementing the basic binary backtrack method.
 
-**Binary-recursive Backtrack Solver**: The solver uses the basic binary-recursive backtracking algorithm. Running time is O(N 2^k).
+**Binary-recursive Backtrack Solver**: ([basic_sat.cpp](https://github.com/thefangbear/SAT/blob/master/basic_sat.cpp)) The solver uses the basic binary-recursive backtracking algorithm. Running time is O(N 2^k).
+**Binary-iterative Backtrack Solver**: ([sat.cpp](https://github.com/thefangbear/SAT/blob/master/sat.cpp)) This solver uses an iterative approach to generate all 2^k solutions down the tree.
 
-**Binary-iterative Backtrack Solver**: This solver uses an iterative approach to generate all 2^k solutions down the tree.
-
-**Binary Stack-recursive Backtrack Solver**: This solver uses a stack to explicitly handle the recursion.
+**Binary Stack-recursive Backtrack Solver**: ([iterative_basic_sat.cpp](https://github.com/thefangbear/SAT/blob/master/iterative_basic_sat.cpp)) This solver uses a stack to explicitly handle the recursion.
 
 ## Development status
 
