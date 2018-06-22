@@ -32,7 +32,7 @@ We currently have three kinds of solvers, all implementing the basic binary back
 
 *Binary-iterative Backtrack Solver*: This solver uses an iterative approach to generate all 2^k solutions down the tree.
 
-*Binary Stack-recursive Backtrack Solver*: (TODO), this solver uses a stack to explicitly handle the recursion.
+**Binary Stack-recursive Backtrack Solver**: This solver uses a stack to explicitly handle the recursion.
 
 ## Development status
 
